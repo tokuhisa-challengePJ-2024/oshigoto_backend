@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+myenv
+
+# Firebase credentials
+firebase/credentials.json
+
