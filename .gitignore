@@ -1,10 +1,14 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-db.sqlite3
-myenv
-
-# Firebase credentials
+# 環境設定ファイル
+.env
 firebase/credentials.json
 
+# Python 関連
+*.pyc
+__pycache__/
+myenv/
+
+# SQLite データベース
+db.sqlite3
+
+# ログファイル
+*.log
