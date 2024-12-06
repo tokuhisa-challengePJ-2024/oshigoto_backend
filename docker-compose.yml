@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+    volumes:
+      - .:/app  # ホストのプロジェクトをコンテナにマウント
+    ports:
+      - "8000:8000"
+    working_dir: /app/backend  # backendディレクトリを作業ディレクトリに設定
+    command: python manage.py runserver 0.0.0.0:8000

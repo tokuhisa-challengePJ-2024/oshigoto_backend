@@ -1,5 +1,6 @@
 # サインアップ用のエンドポイントの作成
 
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -12,11 +13,23 @@ import logging
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+
+def generate_tokens_for_user(user):
+    """
+    指定されたユーザーのためのアクセストークンとリフレッシュトークンを生成
+    """
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])  # 認証なしでアクセスを許可
 def email_password_signup(request):
     """
-    メールアドレスとパスワードで新規ユーザーを作成するエンドポイント。
+    メールアドレスとパスワードで新規ユーザーを作成し、トークンを返すエンドポイント。
     同じメールアドレスが登録済みの場合はエラーを返す。
     """
     serializer = UserSignupSerializer(data=request.data)  # リクエストデータをシリアライズ
@@ -36,10 +49,14 @@ def email_password_signup(request):
         user = serializer.save()  # ユーザーを保存
         logger.info(f"新しいユーザーが作成されました: {user.email}")
 
+        # トークンを生成
+        tokens = generate_tokens_for_user(user)
+
         return Response(
             {
-                "message": "ユーザー登録が成功しました！", 
-                "user": serializer.data
+                "message": "ユーザー登録が成功しました！",
+                "user": {"email": user.email},
+                "tokens": tokens
             },
             status=status.HTTP_201_CREATED
         )

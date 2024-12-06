@@ -1,59 +1,53 @@
-# from rest_framework.viewsets import ModelViewSet  # 必要なインポートを追加
-# from rest_framework.decorators import api_view, permission_classes
-# from django.contrib.auth import authenticate
-# from django.http import JsonResponse
-# from rest_framework.views import status
-# from .models import CustomUser
-# from .serializers import CustomUserSerializer
-# from rest_framework.permissions import AllowAny
-# from rest_framework.response import Response
-# from rest_framework import status
-# from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from ..models import Profile  # Profile モデルをインポート
+import logging
 
-# class CustomUserViewSet(ModelViewSet):  # このクラスで ModelViewSet を使用
-#     queryset = CustomUser.objects.all()
-#     serializer_class = CustomUserSerializer
+logger = logging.getLogger(__name__)
 
-# # 既存のプログラムに追記です
-# @api_view(['POST'])
-# @permission_classes([AllowAny])  # 追加: 認証なしでアクセスを許可
-# def login_view(request):
-#     email = request.data.get('email')
-#     password = request.data.get('password')
+@api_view(['POST'])
+@permission_classes([AllowAny])  # 認証不要でアクセス可能
+def login_user(request):
+    """
+    ログインAPI: メールアドレスとパスワードでユーザーを認証し、JWTトークンを返す。
+    """
+    email = request.data.get("email")
+    password = request.data.get("password")
 
-#     if not email or not password:
-#         return JsonResponse(
-#             {'error': 'メールアドレスとパスワードを入力してください'},
-#             status=status.HTTP_400_BAD_REQUEST
-#         )
+    # 入力データの検証
+    if not email or not password:
+        return Response(
+            {"error": "メールアドレスとパスワードは必須です。"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-#     # ユーザー認証
-#     user = authenticate(username=email, password=password)
-#     if user is not None:
-#         # 認証成功
-#         return JsonResponse(
-#             {'message': 'login seccess', 'username': user.username},
-#             status=status.HTTP_200_OK
-#         )
-#     else:
-#         # 認証失敗
-#         return JsonResponse(
-#             {'error': '認証に失敗しました。メールアドレスまたはパスワードが正しくありません'},
-#             status=status.HTTP_401_UNAUTHORIZED
-#         )
+    # 認証
+    user = authenticate(email=email, password=password)
+    if user is None:
+        logger.warning(f"ログイン失敗: email={email}")
+        return Response(
+            {"error": "メールアドレスまたはパスワードが正しくありません。"},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
+    # トークンの生成
+    refresh = RefreshToken.for_user(user)
+    logger.info(f"ログイン成功: email={email}")
 
-# @csrf_exempt  # CSRF チェックを無効化
-# @api_view(['POST'])
-# @permission_classes([AllowAny])  # すべてのリクエストを許可
-# def firebase_login(request):
-#     uid = request.data.get('fa_id')
-#     email = request.data.get('email')
-#     name = request.data.get('name')
+    # プロフィール情報の取得
+    try:
+        profile = Profile.objects.get(user=user)  # プロフィールを取得
+        profile_created_at = profile.created_at  # プロフィール作成日時
+    except Profile.DoesNotExist:
+        profile_created_at = None  # プロフィールがない場合は None にする
 
-#     if not uid or not email:
-#         return Response({"error": "UID とメールアドレスが必要です"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     # Firebase ユーザーを Django データベースに保存
-#     user, created = CustomUser.objects.get_or_create(uid=uid, defaults={"email": email, "username": name})
-#     return Response({"message": "Firebase ユーザーが同期されました", "username": user.username}, status=status.HTTP_200_OK)
+    return Response({
+        "message": "ログイン成功",
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+        "profile_created_at": profile_created_at,  # プロフィール作成日時を追加
+    }, status=status.HTTP_200_OK)

@@ -21,7 +21,8 @@ SECRET_KEY = 'django-insecure-9lg4q9%sac+!8evffoi11)iv*14xsfjwt*r9r1$*eqr5)fhje5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '76c3-220-146-33-234.ngrok-free.app']
 
 
 # Application definition
@@ -36,7 +37,6 @@ INSTALLED_APPS = [
     # サードパーティー
     'rest_framework',  # 追加
     "corsheaders",     # 追加
-
     # 作成したアプリを追加
     'users',  # 追加
 ]
@@ -136,9 +136,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',  # メール認証
+        'rest_framework_simplejwt.authentication.JWTAuthentication',    # トークン認証
+        'rest_framework.authentication.SessionAuthentication',          # メール認証
         'rest_framework.authentication.BasicAuthentication',
-        'users.authentication.FirebaseAuthentication',  # Firebase認証
+        'users.authentication.FirebaseAuthentication',                  # Firebase認証
     ],
 }
 
@@ -151,4 +152,11 @@ AUTHENTICATION_BACKENDS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # フロントエンドのURL
     "http://127.0.0.1:3000",
+    'https://76c3-220-146-33-234.ngrok-free.app',
 ]
+
+CSRF_TRUSTED_ORIGINS = ['https://76c3-220-146-33-234.ngrok-free.app']
+
+# MEDIAの設定
+MEDIA_URL = '/media/'  # メディアファイルのURLパス
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # メディアファイルを保存するローカルフォルダ
